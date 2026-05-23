@@ -47,6 +47,14 @@ else
 fi
 
 # ------------------------------------------------------------------ stage 2: configure chroot
+if [[ -f "$CHROOT_DIR/.configured" && "${FORCE_CONFIGURE:-0}" != "1" ]]; then
+  log "chroot already configured (set FORCE_CONFIGURE=1 to redo)"
+  KVER="$(basename "$(ls -1 "$CHROOT_DIR"/boot/vmlinuz-* | sort -V | tail -1)" | sed 's/vmlinuz-//')"
+  log "kernel found: $KVER"
+  mkdir -p "$IMAGE_DIR/casper" "$IMAGE_DIR/boot/grub" "$IMAGE_DIR/isolinux" "$IMAGE_DIR/EFI/boot"
+  cp "$CHROOT_DIR/boot/vmlinuz-$KVER" "$IMAGE_DIR/casper/vmlinuz"
+  cp "$CHROOT_DIR/boot/initrd.img-$KVER" "$IMAGE_DIR/casper/initrd"
+else
 log "configuring chroot"
 
 # Sources
@@ -101,13 +109,28 @@ umount -lf "$CHROOT_DIR/dev/pts" || true
 umount -lf "$CHROOT_DIR/dev"     || true
 trap - EXIT
 
+touch "$CHROOT_DIR/.configured"
+fi
+
+# Sanity: bail if anything is still mounted (would pollute squashfs).
+if mount | grep -q " on $CHROOT_DIR"; then
+  die "chroot still has active mounts; refusing to squash"
+fi
+
+# Empty out mountpoint dirs so the squashfs only carries the dir entries,
+# not residual runtime state.
+rm -rf "$CHROOT_DIR/run"/*    "$CHROOT_DIR/run"/.[!.]* 2>/dev/null || true
+rm -rf "$CHROOT_DIR/tmp"/*    "$CHROOT_DIR/tmp"/.[!.]* 2>/dev/null || true
+rm -rf "$CHROOT_DIR/var/tmp"/* "$CHROOT_DIR/var/tmp"/.[!.]* 2>/dev/null || true
+
 # ------------------------------------------------------------------ stage 3: squashfs root
 log "creating squashfs (this takes a few minutes)"
 rm -f "$IMAGE_DIR/casper/filesystem.squashfs"
 mksquashfs "$CHROOT_DIR" "$IMAGE_DIR/casper/filesystem.squashfs" \
-    -noappend -comp xz -e boot \
+    -noappend -comp xz \
+    -e boot \
     -wildcards -e 'var/cache/apt/archives/*.deb' 'var/lib/apt/lists/*' \
-                'tmp/*' 'root/.bash_history' '.bootstrapped'
+                'root/.bash_history' '.bootstrapped' '.configured'
 
 # Manifests required by casper
 chroot "$CHROOT_DIR" dpkg-query -W --showformat='${Package} ${Version}\n' \
