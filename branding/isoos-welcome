@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Friendly first-login banner for interactive shells.
+set -eu
+
+cyan=$'\033[1;36m'; dim=$'\033[2m'; rst=$'\033[0m'
+
+cat <<EOF
+${cyan}Welcome to IsoOS 0.1.0 (Genesis)${rst}
+${dim}— a live system built on Ubuntu 24.04 —${rst}
+
+  kernel : $(uname -r)
+  uptime : $(uptime -p 2>/dev/null || echo unknown)
+  ip     : $(hostname -I 2>/dev/null | awk '{print $1}' || echo 'no-net')
+
+Try:  isoos-welcome       (show this banner)
+      sudo apt update     (refresh package index)
+      nmtui               (configure network)
+
+EOF

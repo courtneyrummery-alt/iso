@@ -1,0 +1,5 @@
+work/
+out/
+*.iso
+work.log
+nohup.out
