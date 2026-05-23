@@ -1,0 +1,11 @@
+NAME="IsoOS"
+PRETTY_NAME="IsoOS 0.1.0 (Genesis)"
+ID=isoos
+ID_LIKE="ubuntu debian"
+VERSION="0.1.0 (Genesis)"
+VERSION_ID="0.1.0"
+VERSION_CODENAME=genesis
+UBUNTU_CODENAME=noble
+HOME_URL="https://example.invalid/isoos"
+SUPPORT_URL="https://example.invalid/isoos/support"
+BUG_REPORT_URL="https://example.invalid/isoos/bugs"
