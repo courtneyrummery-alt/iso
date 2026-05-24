@@ -9,14 +9,31 @@ A real, bootable live ISO built on top of Ubuntu 24.04 (Noble).
 
 ## Build
 
-Needs Ubuntu 22.04+ host, ~8 GB scratch, network access to `archive.ubuntu.com`,
-and root:
+### Linux host (Ubuntu 22.04+)
+
+~8 GB scratch, network access to `archive.ubuntu.com`, root:
 
 ```sh
 sudo apt-get install -y debootstrap squashfs-tools xorriso isolinux \
     syslinux-common grub-pc-bin grub-efi-amd64-bin mtools dosfstools
 sudo ./build.sh
 ```
+
+### Windows host (Docker Desktop)
+
+The build tools (`debootstrap`, `mksquashfs`, `xorriso`, …) are Linux-only,
+so the Windows path runs them inside a privileged Ubuntu 24.04 container.
+Requires Docker Desktop with the WSL2 backend enabled.
+
+```powershell
+.\build.ps1
+```
+
+`build.ps1` builds the `isoos-builder` image, then runs `build.sh` inside
+it with the repo bind-mounted. The chroot scratch lives in a named Docker
+volume (`isoos-work`) because NTFS can't represent the device nodes and
+Unix permissions debootstrap creates; only the finished ISO is written
+back to `out\` on the host.
 
 Output: `out/isoos-0.1.0-amd64.iso`.
 
@@ -25,6 +42,8 @@ Output: `out/isoos-0.1.0-amd64.iso`.
 | Path                  | Purpose                                         |
 |-----------------------|-------------------------------------------------|
 | `build.sh`            | Top-level build script (debootstrap → ISO).     |
+| `build.ps1`           | Windows wrapper that runs `build.sh` in Docker. |
+| `Dockerfile`          | Ubuntu 24.04 builder image used by `build.ps1`. |
 | `chroot-setup.sh`     | Runs inside the chroot to install live tooling. |
 | `branding/`           | `os-release`, `motd`, login banner, etc.        |
 | `boot/isolinux.cfg`   | BIOS boot menu (syslinux).                      |
